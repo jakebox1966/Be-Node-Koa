@@ -85,13 +85,30 @@
  *
  *      **koa-bodyparser를 적용할 때는 router를 적용하는 코드의 윗 부분에서 해야한다.
  *
- *
+ * =====================================================================
+ * 기존 리액트 프로젝트에서 사용해 오던 ES 모듈 import/export문법은 Node.js에서 아직 정식으로 지원되지 않는다. => esm 라이브러리 설치하여 사용
+ * =====================================================================
  */
-const Koa = require('koa')
-const Router = require('koa-router')
-const bodyparser = require('koa-bodyparser')
+import dotenv from 'dotenv'
+dotenv.config()
 
-const api = require('./api')
+import Koa from 'koa'
+import Router from 'koa-router'
+import bodyParser from 'koa-bodyparser'
+import mongoose from 'mongoose'
+
+//비구조화 할당을 통해 process.env 내부 값에 대한 레퍼런스 만들기
+import api from './api/index.js'
+
+const { PORT, MONGO_URI } = process.env
+mongoose
+    .connect(MONGO_URI)
+    .then(() => {
+        console.log('Connected to MongoDB')
+    })
+    .catch((e) => {
+        console.error(e)
+    })
 
 const app = new Koa()
 const router = new Router()
@@ -100,11 +117,15 @@ const router = new Router()
 router.use('/api', api.routes()) // api 라우트 적용 : 만들어진 api 라우터를 서버의 메인 라우터의 /api 경로로 설정
 
 // 라우터 적용 전에 bodyParser 적용
-app.use(bodyparser())
+app.use(bodyParser())
 
 // app 인스턴스에 라우터 적용
 
 app.use(router.routes()).use(router.allowedMethods())
-app.listen(4000, () => {
-    console.log('Listening to port 4000 http://localhost:4000')
+
+//PORT가 지정되어 있지 않다면 4000을 사용
+const port = PORT || 4000
+app.listen(port, () => {
+    console.log(port)
+    console.log('Listening to port %d http://localhost:%d', port, port)
 })
